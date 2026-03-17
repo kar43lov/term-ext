@@ -4,7 +4,6 @@
 
 ## Что устанавливается
 
-- **zsh** — shell
 - **starship** — кастомный prompt
 - **fzf** — fuzzy search
 - **fzf-tab** — автодополнение через fzf
@@ -13,25 +12,31 @@
 - **bat** — красивый `cat`
 - **broot** — файловый менеджер
 
+## Два скрипта
+
+| Скрипт | Когда использовать |
+|--------|-------------------|
+| `install-terminal.sh` | Свой сервер, root-доступ, ставит всё системно |
+| `install-terminal-user.sh` | Общий сервер, без sudo, ставит только для текущего пользователя |
+
 ## Использование
 
-### Вариант 1 — через scp
-
-```bash
-scp install-terminal.sh user@server:~/
-ssh user@server
-bash install-terminal.sh
-exec zsh
-```
-
-### Вариант 2 — одна команда через curl
+### Свой сервер (с sudo)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kar43lov/term-ext/main/install-terminal.sh | bash
 exec zsh
 ```
 
+### Общий сервер (без sudo, только для меня)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kar43lov/term-ext/main/install-terminal-user.sh | bash
+exec zsh
+```
+
 ## Требования
 
-- Linux (Debian/Ubuntu, Fedora, Arch, Alpine)
-- sudo-доступ для установки пакетов
+- Linux (x86_64 или aarch64)
+- `install-terminal.sh` — sudo-доступ
+- `install-terminal-user.sh` — только git и curl (обычно уже есть)
