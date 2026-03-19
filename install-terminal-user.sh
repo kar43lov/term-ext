@@ -109,7 +109,26 @@ if ! command -v broot >/dev/null 2>&1; then
         curl -sSfL "https://dystroy.org/broot/download/aarch64-linux/broot" -o ~/.local/bin/broot
     fi
     chmod +x ~/.local/bin/broot
-    broot --install
+    # --install интерактивный — создаём launcher вручную
+    mkdir -p ~/.local/share/broot/launcher/bash
+    cat > ~/.local/share/broot/launcher/bash/1 << 'BROOT_LAUNCHER'
+#!/bin/bash
+function br {
+    local cmd cmd_file code
+    cmd_file=$(mktemp)
+    if broot --outcmd "$cmd_file" "$@"; then
+        cmd=$(<"$cmd_file")
+        command rm -f "$cmd_file"
+        eval "$cmd"
+    else
+        code=$?
+        command rm -f "$cmd_file"
+        return "$code"
+    fi
+}
+BROOT_LAUNCHER
+    mkdir -p ~/.config/broot/launcher/bash
+    ln -sf ~/.local/share/broot/launcher/bash/1 ~/.config/broot/launcher/bash/br
 else
     info "broot уже установлен."
 fi
