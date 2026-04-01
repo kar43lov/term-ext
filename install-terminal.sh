@@ -376,6 +376,18 @@ cat > ~/.zshrc << 'ZSHRC_EOF'
 # ── PATH ──────────────────────────────────────────────────────
 export PATH="$HOME/.local/bin:$HOME/.fzf/bin:$PATH"
 
+# ── История ───────────────────────────────────────────────────
+HISTSIZE=10000
+SAVEHIST=10000
+HISTFILE=~/.zsh_history
+setopt APPEND_HISTORY
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_REDUCE_BLANKS
+setopt EXTENDED_HISTORY
+setopt INC_APPEND_HISTORY
+
 # ── Completion ────────────────────────────────────────────────
 autoload -Uz compinit
 compinit
@@ -441,6 +453,10 @@ if [ "$CURRENT_SHELL" != "zsh" ]; then
         chsh -s "$ZSH_PATH" || warn "Не удалось сменить шелл. Выполни вручную: chsh -s $ZSH_PATH"
     fi
 fi
+
+# ── Файл истории ──────────────────────────────────────────────
+touch ~/.zsh_history
+chmod 600 ~/.zsh_history
 
 echo ""
 info "Готово! Установлено:"
