@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 #
-# Разворачивание терминального сетапа для ТЕКУЩЕГО пользователя.
+# Разворачивание терминального сетапа для ТЕКУЩЕГО пользователя (Linux + macOS).
 # Без sudo, без влияния на остальных пользователей.
-# Всё ставится в ~/.local/bin, конфиги — в ~/
+# Linux: всё ставится в ~/.local/bin
+# macOS: всё ставится через Homebrew
 #
 # Использование:
 #   curl -fsSL https://raw.githubusercontent.com/kar43lov/term-ext/main/install-terminal-user.sh | bash
@@ -19,19 +20,31 @@ info()  { echo -e "${GREEN}[✓]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 error() { echo -e "${RED}[✗]${NC} $1"; }
 
-# ── Проверка: только Linux ────────────────────────────────────
-if [[ "$(uname -s)" != "Linux" ]]; then
-    error "Этот скрипт предназначен только для Linux."
-    exit 1
-fi
+# ── Определение ОС ───────────────────────────────────────────
+OS="$(uname -s)"
+case "$OS" in
+    Linux)  OS_TYPE="linux" ;;
+    Darwin) OS_TYPE="macos" ;;
+    *)      error "Неподдерживаемая ОС: $OS"; exit 1 ;;
+esac
 
 # ── Определение архитектуры ───────────────────────────────────
 ARCH=$(uname -m)
 case "$ARCH" in
     x86_64)  ARCH_LABEL="x86_64" ;;
     aarch64) ARCH_LABEL="aarch64" ;;
+    arm64)   ARCH_LABEL="aarch64" ;;
     *)       error "Неподдерживаемая архитектура: $ARCH"; exit 1 ;;
 esac
+
+# ── Проверка Homebrew на macOS ────────────────────────────────
+HAS_BREW=false
+if command -v brew >/dev/null 2>&1; then
+    HAS_BREW=true
+elif [ "$OS_TYPE" = "macos" ]; then
+    error "Homebrew не установлен. Установи: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+    exit 1
+fi
 
 # ── Подготовка директорий ─────────────────────────────────────
 mkdir -p ~/.local/bin
@@ -39,15 +52,19 @@ mkdir -p ~/.config
 mkdir -p ~/.zsh/plugins
 
 # Убедиться, что ~/.local/bin в PATH для текущего скрипта
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/.fzf/bin:$PATH"
 
 info "Установка для пользователя: $(whoami)"
-info "Архитектура: $ARCH_LABEL"
+info "ОС: $OS_TYPE | Архитектура: $ARCH_LABEL"
 
 # ── Starship ──────────────────────────────────────────────────
 if ! command -v starship >/dev/null 2>&1; then
-    info "Устанавливаю starship в ~/.local/bin..."
-    curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
+    info "Устанавливаю starship..."
+    if [ "$HAS_BREW" = true ]; then
+        brew install starship
+    else
+        curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
+    fi
 else
     info "starship уже установлен."
 fi
@@ -55,8 +72,12 @@ fi
 # ── fzf ───────────────────────────────────────────────────────
 if ! command -v fzf >/dev/null 2>&1 && [ ! -f ~/.fzf/bin/fzf ]; then
     info "Устанавливаю fzf..."
-    git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
-    ~/.fzf/install --all --no-bash --no-fish
+    if [ "$HAS_BREW" = true ]; then
+        brew install fzf
+    else
+        git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+        ~/.fzf/install --all --no-bash --no-fish
+    fi
 else
     info "fzf уже установлен."
 fi
@@ -64,51 +85,67 @@ fi
 # ── zoxide ────────────────────────────────────────────────────
 if ! command -v zoxide >/dev/null 2>&1; then
     info "Устанавливаю zoxide..."
-    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+    if [ "$HAS_BREW" = true ]; then
+        brew install zoxide
+    else
+        curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+    fi
 else
     info "zoxide уже установлен."
 fi
 
 # ── eza ───────────────────────────────────────────────────────
 if ! command -v eza >/dev/null 2>&1; then
-    info "Устанавливаю eza в ~/.local/bin..."
-    EZA_VERSION=$(curl -s https://api.github.com/repos/eza-community/eza/releases/latest | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
-    if [ "$ARCH_LABEL" = "x86_64" ]; then
-        EZA_ARCH="x86_64-unknown-linux-gnu"
+    info "Устанавливаю eza..."
+    if [ "$HAS_BREW" = true ]; then
+        brew install eza
     else
-        EZA_ARCH="aarch64-unknown-linux-gnu"
+        EZA_VERSION=$(curl -s https://api.github.com/repos/eza-community/eza/releases/latest | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
+        if [ "$ARCH_LABEL" = "x86_64" ]; then
+            EZA_ARCH="x86_64-unknown-linux-gnu"
+        else
+            EZA_ARCH="aarch64-unknown-linux-gnu"
+        fi
+        curl -sSfL "https://github.com/eza-community/eza/releases/download/v${EZA_VERSION}/eza_${EZA_ARCH}.tar.gz" | tar xz -C ~/.local/bin/
+        chmod +x ~/.local/bin/eza
     fi
-    curl -sSfL "https://github.com/eza-community/eza/releases/download/v${EZA_VERSION}/eza_${EZA_ARCH}.tar.gz" | tar xz -C ~/.local/bin/
-    chmod +x ~/.local/bin/eza
 else
     info "eza уже установлен."
 fi
 
 # ── bat ───────────────────────────────────────────────────────
 if ! command -v bat >/dev/null 2>&1 && ! command -v batcat >/dev/null 2>&1; then
-    info "Устанавливаю bat в ~/.local/bin..."
-    BAT_VERSION=$(curl -s https://api.github.com/repos/sharkdp/bat/releases/latest | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
-    if [ "$ARCH_LABEL" = "x86_64" ]; then
-        BAT_ARCH="x86_64-unknown-linux-gnu"
+    info "Устанавливаю bat..."
+    if [ "$HAS_BREW" = true ]; then
+        brew install bat
     else
-        BAT_ARCH="aarch64-unknown-linux-gnu"
+        BAT_VERSION=$(curl -s https://api.github.com/repos/sharkdp/bat/releases/latest | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
+        if [ "$ARCH_LABEL" = "x86_64" ]; then
+            BAT_ARCH="x86_64-unknown-linux-gnu"
+        else
+            BAT_ARCH="aarch64-unknown-linux-gnu"
+        fi
+        curl -sSfL "https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/bat-v${BAT_VERSION}-${BAT_ARCH}.tar.gz" | tar xz --strip-components=1 -C /tmp/ "bat-v${BAT_VERSION}-${BAT_ARCH}/bat"
+        mv /tmp/bat ~/.local/bin/bat
+        chmod +x ~/.local/bin/bat
     fi
-    curl -sSfL "https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/bat-v${BAT_VERSION}-${BAT_ARCH}.tar.gz" | tar xz --strip-components=1 -C /tmp/ "bat-v${BAT_VERSION}-${BAT_ARCH}/bat"
-    mv /tmp/bat ~/.local/bin/bat
-    chmod +x ~/.local/bin/bat
 else
     info "bat уже установлен."
 fi
 
 # ── broot ─────────────────────────────────────────────────────
 if ! command -v broot >/dev/null 2>&1; then
-    info "Устанавливаю broot в ~/.local/bin..."
-    if [ "$ARCH_LABEL" = "x86_64" ]; then
-        curl -sSfL "https://dystroy.org/broot/download/x86_64-linux/broot" -o ~/.local/bin/broot
+    info "Устанавливаю broot..."
+    if [ "$HAS_BREW" = true ]; then
+        brew install broot
     else
-        curl -sSfL "https://dystroy.org/broot/download/aarch64-linux/broot" -o ~/.local/bin/broot
+        if [ "$ARCH_LABEL" = "x86_64" ]; then
+            curl -sSfL "https://dystroy.org/broot/download/x86_64-linux/broot" -o ~/.local/bin/broot
+        else
+            curl -sSfL "https://dystroy.org/broot/download/aarch64-linux/broot" -o ~/.local/bin/broot
+        fi
+        chmod +x ~/.local/bin/broot
     fi
-    chmod +x ~/.local/bin/broot
     # --install интерактивный — создаём launcher вручную
     mkdir -p ~/.local/share/broot/launcher/bash
     cat > ~/.local/share/broot/launcher/bash/1 << 'BROOT_LAUNCHER'

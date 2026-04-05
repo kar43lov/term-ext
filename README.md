@@ -1,6 +1,6 @@
 # term-ext
 
-Скрипт для разворачивания терминального сетапа на Linux-сервере одной командой.
+Скрипт для разворачивания терминального сетапа одной командой (Linux + macOS).
 
 ## Что устанавливается
 
@@ -16,12 +16,12 @@
 
 | Скрипт | Когда использовать |
 |--------|-------------------|
-| `install-terminal.sh` | Свой сервер, root-доступ, ставит всё системно |
-| `install-terminal-user.sh` | Общий сервер, без sudo, ставит только для текущего пользователя |
+| `install-terminal.sh` | Свой сервер / Mac, ставит системно (sudo / brew) |
+| `install-terminal-user.sh` | Общий сервер, без sudo, только для текущего пользователя |
 
 ## Использование
 
-### Свой сервер (с sudo)
+### Свой сервер или Mac
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kar43lov/term-ext/main/install-terminal.sh | bash
@@ -37,6 +37,7 @@ exec zsh
 
 ## Требования
 
-- Linux (x86_64 или aarch64)
-- `install-terminal.sh` — sudo-доступ
-- `install-terminal-user.sh` — только git и curl (обычно уже есть)
+- Linux (x86_64, aarch64) или macOS (Apple Silicon, Intel)
+- macOS: Homebrew
+- `install-terminal.sh` на Linux: sudo-доступ
+- `install-terminal-user.sh` на Linux: только git и curl

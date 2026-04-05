@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# Скрипт разворачивания терминального сетапа на Linux-сервере.
+# Скрипт разворачивания терминального сетапа (Linux + macOS).
 # Одна команда — полный сетап: zsh, starship, fzf, zoxide, eza, bat, broot, fzf-tab.
 #
 # Использование:
-#   curl -fsSL https://raw.githubusercontent.com/USER/REPO/main/install-terminal.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/kar43lov/term-ext/main/install-terminal.sh | bash
 #   или
 #   bash install-terminal.sh
 #
@@ -20,15 +20,25 @@ info()  { echo -e "${GREEN}[✓]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 error() { echo -e "${RED}[✗]${NC} $1"; }
 
-# ── Проверка: только Linux ────────────────────────────────────
-if [[ "$(uname -s)" != "Linux" ]]; then
-    error "Этот скрипт предназначен только для Linux."
-    exit 1
-fi
+# ── Определение ОС ───────────────────────────────────────────
+OS="$(uname -s)"
+case "$OS" in
+    Linux)  OS_TYPE="linux" ;;
+    Darwin) OS_TYPE="macos" ;;
+    *)      error "Неподдерживаемая ОС: $OS"; exit 1 ;;
+esac
+
+info "ОС: $OS_TYPE"
 
 # ── Определение пакетного менеджера ───────────────────────────
 detect_pm() {
-    if command -v apt-get >/dev/null 2>&1; then
+    if [ "$OS_TYPE" = "macos" ]; then
+        if command -v brew >/dev/null 2>&1; then
+            echo "brew"
+        else
+            echo "unknown"
+        fi
+    elif command -v apt-get >/dev/null 2>&1; then
         echo "apt"
     elif command -v dnf >/dev/null 2>&1; then
         echo "dnf"
@@ -42,12 +52,22 @@ detect_pm() {
 }
 
 PM=$(detect_pm)
+
+# На macOS без Homebrew — предложить установить
+if [ "$OS_TYPE" = "macos" ] && [ "$PM" = "unknown" ]; then
+    error "Homebrew не установлен. Установи: /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+    exit 1
+fi
+
 info "Пакетный менеджер: $PM"
 
 # ── Установка системных пакетов ───────────────────────────────
 install_packages() {
     local packages=("$@")
     case "$PM" in
+        brew)
+            brew install "${packages[@]}" 2>/dev/null || true
+            ;;
         apt)
             sudo apt-get update -qq
             sudo apt-get install -y -qq "${packages[@]}"
@@ -68,22 +88,36 @@ install_packages() {
     esac
 }
 
-info "Устанавливаю базовые пакеты (zsh, git, curl, unzip)..."
-install_packages zsh git curl unzip
+# На macOS zsh уже есть, на Linux — ставим
+if [ "$OS_TYPE" = "linux" ]; then
+    info "Устанавливаю базовые пакеты (zsh, git, curl, unzip)..."
+    install_packages zsh git curl unzip
+else
+    info "macOS: zsh уже встроен."
+    install_packages git curl
+fi
 
 # ── Starship ──────────────────────────────────────────────────
 if ! command -v starship >/dev/null 2>&1; then
     info "Устанавливаю starship..."
-    curl -sS https://starship.rs/install.sh | sh -s -- -y
+    if [ "$PM" = "brew" ]; then
+        brew install starship
+    else
+        curl -sS https://starship.rs/install.sh | sh -s -- -y
+    fi
 else
     info "starship уже установлен."
 fi
 
 # ── fzf ───────────────────────────────────────────────────────
-if ! command -v fzf >/dev/null 2>&1; then
+if ! command -v fzf >/dev/null 2>&1 && [ ! -f ~/.fzf/bin/fzf ]; then
     info "Устанавливаю fzf..."
-    git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
-    ~/.fzf/install --all --no-bash --no-fish
+    if [ "$PM" = "brew" ]; then
+        brew install fzf
+    else
+        git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+        ~/.fzf/install --all --no-bash --no-fish
+    fi
 else
     info "fzf уже установлен."
 fi
@@ -91,7 +125,11 @@ fi
 # ── zoxide ────────────────────────────────────────────────────
 if ! command -v zoxide >/dev/null 2>&1; then
     info "Устанавливаю zoxide..."
-    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+    if [ "$PM" = "brew" ]; then
+        brew install zoxide
+    else
+        curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+    fi
 else
     info "zoxide уже установлен."
 fi
@@ -100,8 +138,10 @@ fi
 if ! command -v eza >/dev/null 2>&1; then
     info "Устанавливаю eza..."
     case "$PM" in
+        brew)
+            brew install eza
+            ;;
         apt)
-            # eza доступен в репозиториях Ubuntu 24.04+ / Debian 13+
             if sudo apt-get install -y -qq eza 2>/dev/null; then
                 true
             else
@@ -128,6 +168,7 @@ fi
 if ! command -v bat >/dev/null 2>&1 && ! command -v batcat >/dev/null 2>&1; then
     info "Устанавливаю bat..."
     case "$PM" in
+        brew)   brew install bat ;;
         apt)    sudo apt-get install -y -qq bat ;;
         dnf)    sudo dnf install -y -q bat ;;
         pacman) sudo pacman -S --noconfirm --needed bat ;;
@@ -145,9 +186,13 @@ fi
 # ── broot ─────────────────────────────────────────────────────
 if ! command -v broot >/dev/null 2>&1; then
     info "Устанавливаю broot..."
-    curl -o /tmp/broot -sSfL "https://dystroy.org/broot/download/x86_64-linux/broot"
-    chmod +x /tmp/broot
-    sudo mv /tmp/broot /usr/local/bin/broot
+    if [ "$PM" = "brew" ]; then
+        brew install broot
+    else
+        curl -o /tmp/broot -sSfL "https://dystroy.org/broot/download/x86_64-linux/broot"
+        chmod +x /tmp/broot
+        sudo mv /tmp/broot /usr/local/bin/broot
+    fi
     # --install интерактивный — создаём launcher вручную
     mkdir -p ~/.local/share/broot/launcher/bash
     cat > ~/.local/share/broot/launcher/bash/1 << 'BROOT_LAUNCHER'
