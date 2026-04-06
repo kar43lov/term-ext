@@ -170,6 +170,18 @@ else
     info "broot уже установлен."
 fi
 
+# ── lazydocker ────────────────────────────────────────────────
+if ! command -v lazydocker >/dev/null 2>&1; then
+    info "Устанавливаю lazydocker..."
+    if [ "$HAS_BREW" = true ]; then
+        brew install lazydocker
+    else
+        curl -sSfL https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
+    fi
+else
+    info "lazydocker уже установлен."
+fi
+
 # ── fzf-tab ───────────────────────────────────────────────────
 FZF_TAB_DIR="$HOME/.zsh/plugins/fzf-tab"
 if [ ! -d "$FZF_TAB_DIR" ]; then
@@ -359,15 +371,17 @@ skin: {
 syntax_theme: MochaDark
 BROOT_SKIN_EOF
 
-# ── .zshrc ────────────────────────────────────────────────────
-info "Записываю .zshrc..."
+# ── Конфигурация term-ext ────────────────────────────────────
+# Управляемый конфиг пишется в ~/.zshrc.term-ext
+# В ~/.zshrc добавляется source-строка — пользовательские добавки не затираются
+info "Записываю ~/.zshrc.term-ext..."
 
-if [ -f ~/.zshrc ]; then
-    cp ~/.zshrc ~/.zshrc.backup.$(date +%Y%m%d%H%M%S)
-    warn "Старый .zshrc сохранён в ~/.zshrc.backup.*"
-fi
+cat > ~/.zshrc.term-ext << 'TERMEXT_EOF'
+# ══════════════════════════════════════════════════════════════
+# term-ext: управляемый конфиг (обновляется скриптом)
+# Не редактируй вручную — добавляй свои настройки в ~/.zshrc
+# ══════════════════════════════════════════════════════════════
 
-cat > ~/.zshrc << 'ZSHRC_EOF'
 # ── PATH ──────────────────────────────────────────────────────
 export PATH="$HOME/.local/bin:$HOME/.fzf/bin:$PATH"
 
@@ -394,14 +408,6 @@ stty -ixon
 # ── fzf ───────────────────────────────────────────────────────
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 command -v fzf >/dev/null 2>&1 && eval "$(fzf --zsh 2>/dev/null)" || true
-
-# ── История: поиск стрелками ──────────────────────────────────
-autoload -U up-line-or-beginning-search
-autoload -U down-line-or-beginning-search
-zle -N up-line-or-beginning-search
-zle -N down-line-or-beginning-search
-bindkey "^[[A" up-line-or-beginning-search
-bindkey "^[[B" down-line-or-beginning-search
 
 # ── Starship prompt ──────────────────────────────────────────
 eval "$(starship init zsh)"
@@ -432,7 +438,58 @@ fi
 if command -v bat >/dev/null 2>&1; then
     alias cat='bat --paging=never'
 fi
-ZSHRC_EOF
+
+# ── Docker (если установлен) ──────────────────────────────────
+if command -v docker >/dev/null 2>&1; then
+    # Определяем, нужен ли sudo для docker
+    if docker ps >/dev/null 2>&1; then
+        _DOCKER="docker"
+    else
+        _DOCKER="sudo docker"
+    fi
+
+    alias ld='lazydocker'
+
+    dselect() {
+        eval "$_DOCKER ps -a --format '{{.Names}}'" \
+        | fzf --preview "eval $_DOCKER ps -a --filter name='^/{}$' --format 'Status: {{.Status}}\nImage: {{.Image}}\nPorts: {{.Ports}}'" \
+              --preview-window=right:60%
+    }
+
+    dr()   { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER restart $t"; }
+    ds()   { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER stop $t"; }
+    dst()  { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER start $t"; }
+    drm()  { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER rm -f $t"; }
+    dlogs(){ local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER logs -f $t"; }
+    dps()  { eval "$_DOCKER ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'"; }
+fi
+
+# ── История: поиск стрелками (в конце, после всех плагинов) ──
+autoload -U up-line-or-beginning-search
+autoload -U down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey "^[[A" up-line-or-beginning-search   # xterm
+bindkey "^[OA"  up-line-or-beginning-search  # application mode
+bindkey "^[[B" down-line-or-beginning-search  # xterm
+bindkey "^[OB"  down-line-or-beginning-search # application mode
+TERMEXT_EOF
+
+# Добавить source в .zshrc, если ещё нет
+TERMEXT_SOURCE='[ -f ~/.zshrc.term-ext ] && source ~/.zshrc.term-ext'
+if [ ! -f ~/.zshrc ] || ! grep -qF '.zshrc.term-ext' ~/.zshrc; then
+    if [ ! -f ~/.zshrc ]; then
+        echo "$TERMEXT_SOURCE" > ~/.zshrc
+        info "Создан ~/.zshrc с подключением term-ext."
+    else
+        # .zshrc есть, но без нашей строки — добавляем в начало
+        { echo "$TERMEXT_SOURCE"; echo ""; cat ~/.zshrc; } > ~/.zshrc.tmp
+        mv ~/.zshrc.tmp ~/.zshrc
+        info "Добавлено подключение term-ext в начало ~/.zshrc."
+    fi
+else
+    info "~/.zshrc уже подключает term-ext."
+fi
 
 # ── Проверка: есть ли zsh на сервере ─────────────────────────
 if ! command -v zsh >/dev/null 2>&1; then
