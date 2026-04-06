@@ -511,6 +511,55 @@ if command -v docker >/dev/null 2>&1; then
     drm()  { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER rm -f $t"; }
     dlogs(){ local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER logs -f $t"; }
     dps()  { eval "$_DOCKER ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'"; }
+
+    # dozrun — запуск контейнера doznanie одной командой
+    # Использование: dozrun [pipeline_id]
+    # Ветка выбирается через fzf, pipeline вводится вручную
+    dozbranch() {
+        echo "test\nmain\nfeature/dzn-220" \
+        | fzf --prompt="branch> "
+    }
+
+    dozrun() {
+        local branch=\${1:-\$(dozbranch)}
+        [ -z "\$branch" ] && return
+
+        local pipeline
+        if [ -n "\$2" ]; then
+            pipeline="\$2"
+        else
+            echo -n "pipeline> "
+            read pipeline
+        fi
+        [ -z "\$pipeline" ] && return
+
+        local dt=\$(date +%y%m%d)
+        local mmdd=\$(date +%m%d)
+        local name="doznanie_\$dt"
+        local port="1\$mmdd"
+        local image="gitlab.dev.iac.mchs.ru:5050/cgu/doznanie.web/srv-main----\${branch}:\${pipeline}"
+
+        if eval "\$_DOCKER ps -a --format '{{.Names}}'" | grep -q "^\$name\$"; then
+            echo "Контейнер \$name уже существует. Удалить? [y/N]"
+            read -r yn
+            if [[ "\$yn" =~ ^[Yy] ]]; then
+                eval "\$_DOCKER rm -f \$name"
+            else
+                return 1
+            fi
+        fi
+
+        echo "Запуск: \$name | порт: \$port | образ: \$image"
+        eval "\$_DOCKER run -itd \\
+            --name \$name \\
+            --restart unless-stopped \\
+            -p \$port:8080 \\
+            -e TZ=Europe/Moscow \\
+            -v /etc/hosts:/etc/hosts \\
+            -v /srv/services/inq.dev.iac.mchs.ru/appsettings.json:/app/main/appsettings.json \\
+            -v /data/nfs/VS:/data/nfs/VS \\
+            \$image"
+    }
 fi
 
 # ── История: поиск стрелками (в конце, после всех плагинов) ──
