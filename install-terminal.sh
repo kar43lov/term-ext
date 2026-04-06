@@ -612,6 +612,92 @@ if command -v docker >/dev/null 2>&1; then
             -v /home/stepanovim/inq.cgu.mchs.ru/logs:/app/main/logs \\
             \$image"
     }
+
+    # dozrun-kafka — запуск Kafka consumer (dev)
+    dozrun-kafka() {
+        local branch=\${1:-\$(dozbranch)}
+        [ -z "\$branch" ] && return
+
+        local pipeline
+        if [ -n "\$2" ]; then
+            pipeline="\$2"
+        else
+            echo -n "pipeline> "
+            read pipeline
+        fi
+        [ -z "\$pipeline" ] && return
+
+        local dt=\$(date +%y%m%d)
+        local mmdd=\$(date +%m%d)
+        local name="doznanie__consumer_\$dt"
+        local port="4\$mmdd"
+        local image="gitlab.dev.iac.mchs.ru:5050/cgu/doznanie.web/srv-kafka----\${branch}:\${pipeline}"
+
+        if eval "\$_DOCKER ps -a --format '{{.Names}}'" | grep -q "^\$name\$"; then
+            echo "Контейнер \$name уже существует. Удалить? [y/N]"
+            read -r yn
+            if [[ "\$yn" =~ ^[Yy] ]]; then
+                eval "\$_DOCKER rm -f \$name"
+            else
+                return 1
+            fi
+        fi
+
+        echo "[DEV KAFKA] Запуск: \$name | порт: \$port | образ: \$image"
+        eval "\$_DOCKER run -itd \\
+            --name \$name \\
+            --restart unless-stopped \\
+            -p \$port:8080 \\
+            -e TZ=Europe/Moscow \\
+            -e ASPNETCORE_URLS='http://0.0.0.0:8080' \\
+            -v /etc/hosts:/etc/hosts \\
+            -v /srv/services/inq.dev.iac.mchs.ru/kafka.appsettings.json:/app/kafka/appsettings.json \\
+            \$image"
+    }
+
+    # dozrun-kafka-prod — запуск Kafka consumer (prod)
+    dozrun-kafka-prod() {
+        local branch=\${1:-\$(dozbranch)}
+        [ -z "\$branch" ] && return
+
+        local pipeline
+        if [ -n "\$2" ]; then
+            pipeline="\$2"
+        else
+            echo -n "pipeline> "
+            read pipeline
+        fi
+        [ -z "\$pipeline" ] && return
+
+        local dt=\$(date +%y%m%d)
+        local mmdd=\$(date +%m%d)
+        local name="doznanie__consumer_\$dt"
+        local port="6\$mmdd"
+        local image="gitlab.dev.iac.mchs.ru:5050/cgu/doznanie.web/srv-kafka----\${branch}:\${pipeline}"
+
+        if eval "\$_DOCKER ps -a --format '{{.Names}}'" | grep -q "^\$name\$"; then
+            echo "Контейнер \$name уже существует. Удалить? [y/N]"
+            read -r yn
+            if [[ "\$yn" =~ ^[Yy] ]]; then
+                eval "\$_DOCKER rm -f \$name"
+            else
+                return 1
+            fi
+        fi
+
+        echo "[PROD KAFKA] Запуск: \$name | порт: \$port | образ: \$image"
+        eval "\$_DOCKER run -itd \\
+            --name \$name \\
+            --restart unless-stopped \\
+            -p \$port:8080 \\
+            -e TZ=Europe/Moscow \\
+            -e ASPNETCORE_URLS='http://0.0.0.0:8080' \\
+            -v /etc/hosts:/etc/hosts \\
+            -v /home/stepanovim/inq.cgu.mchs.ru/configs/kafka.appsettings.json:/app/kafka/appsettings.json \\
+            -v /home/stepanovim/inq.cgu.mchs.ru/configs/kafka.nlog.config:/app/kafka/nlog.config \\
+            -v /home/stepanovim/inq.cgu.mchs.ru/logs/kafka:/app/kafka/logs \\
+            \$image"
+    }
 fi
 
 # ── История: поиск стрелками (в конце, после всех плагинов) ──
