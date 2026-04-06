@@ -512,9 +512,6 @@ if command -v docker >/dev/null 2>&1; then
     dlogs(){ local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER logs -f $t"; }
     dps()  { eval "$_DOCKER ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'"; }
 fi
-
-# Doznanie-функции подключаются из отдельного репо (term-ext-doz)
-[ -f ~/.zshrc.term-ext-doz ] && source ~/.zshrc.term-ext-doz
             \$image"
     }
 fi

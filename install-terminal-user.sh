@@ -464,9 +464,6 @@ if command -v docker >/dev/null 2>&1; then
     dps()  { eval "$_DOCKER ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'"; }
 fi
 
-# Doznanie-функции подключаются из отдельного репо (term-ext-doz)
-[ -f ~/.zshrc.term-ext-doz ] && source ~/.zshrc.term-ext-doz
-
 # ── История: поиск стрелками (в конце, после всех плагинов) ──
 autoload -U up-line-or-beginning-search
 autoload -U down-line-or-beginning-search
