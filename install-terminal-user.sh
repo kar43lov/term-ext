@@ -439,6 +439,9 @@ if command -v bat >/dev/null 2>&1; then
     alias cat='bat --paging=never'
 fi
 
+# ── Утилиты ──────────────────────────────────────────────────
+mkcd() { mkdir -p "\$1" && cd "\$1" }
+
 # ── Docker (если установлен) ──────────────────────────────────
 if command -v docker >/dev/null 2>&1; then
     # Определяем, нужен ли sudo для docker
