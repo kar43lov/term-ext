@@ -520,6 +520,49 @@ if command -v docker >/dev/null 2>&1; then
             -v /data/nfs/VS:/data/nfs/VS \\
             \$image"
     }
+
+    dozrun-prod() {
+        local branch=\${1:-\$(dozbranch)}
+        [ -z "\$branch" ] && return
+
+        local pipeline
+        if [ -n "\$2" ]; then
+            pipeline="\$2"
+        else
+            echo -n "pipeline> "
+            read pipeline
+        fi
+        [ -z "\$pipeline" ] && return
+
+        local dt=\$(date +%y%m%d)
+        local mmdd=\$(date +%m%d)
+        local name="doznanie_\$dt"
+        local port="1\$mmdd"
+        local image="gitlab.dev.iac.mchs.ru:5050/cgu/doznanie.web/srv-main----\${branch}:\${pipeline}"
+
+        if eval "\$_DOCKER ps -a --format '{{.Names}}'" | grep -q "^\$name\$"; then
+            echo "Контейнер \$name уже существует. Удалить? [y/N]"
+            read -r yn
+            if [[ "\$yn" =~ ^[Yy] ]]; then
+                eval "\$_DOCKER rm -f \$name"
+            else
+                return 1
+            fi
+        fi
+
+        echo "[PROD] Запуск: \$name | порт: \$port | образ: \$image"
+        eval "\$_DOCKER run -itd \\
+            --name \$name \\
+            --restart unless-stopped \\
+            -p \$port:8080 \\
+            -e TZ=Europe/Moscow \\
+            -v /etc/hosts:/etc/hosts \\
+            -v /home/stepanovim/inq.cgu.mchs.ru/configs/appsettings.json:/app/main/appsettings.json \\
+            -v /data/nfs/VS:/data/nfs/VS \\
+            -v /home/stepanovim/inq.cgu.mchs.ru/configs/nlog.config:/app/main/nlog.config \\
+            -v /home/stepanovim/inq.cgu.mchs.ru/logs:/app/main/logs \\
+            \$image"
+    }
 fi
 
 # ── История: поиск стрелками (в конце, после всех плагинов) ──
