@@ -467,8 +467,17 @@ if command -v docker >/dev/null 2>&1; then
     # Использование: dozrun [pipeline_id]
     # Ветка выбирается через fzf, pipeline вводится вручную
     dozbranch() {
-        echo "test\nmain\nfeature/dzn-220" \
-        | fzf --prompt="branch> "
+        local choice
+        choice=\$(echo "test\nmain\nfeature/dzn-..." \
+        | fzf --prompt="branch> ")
+        if [ "\$choice" = "feature/dzn-..." ]; then
+            echo -n "dzn номер> "
+            read dzn_num
+            [ -z "\$dzn_num" ] && return
+            echo "feature/dzn-\$dzn_num"
+        else
+            echo "\$choice"
+        fi
     }
 
     dozrun() {
