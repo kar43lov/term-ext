@@ -698,6 +698,97 @@ if command -v docker >/dev/null 2>&1; then
             -v /home/stepanovim/inq.cgu.mchs.ru/logs/kafka:/app/kafka/logs \\
             \$image"
     }
+
+    # dozrun-gost — запуск ГОСТ-подписи (dev)
+    dozrun-gost() {
+        local branch=\${1:-\$(dozbranch)}
+        [ -z "\$branch" ] && return
+
+        local pipeline
+        if [ -n "\$2" ]; then
+            pipeline="\$2"
+        else
+            echo -n "pipeline> "
+            read pipeline
+        fi
+        [ -z "\$pipeline" ] && return
+
+        local dt=\$(date +%y%m%d)
+        local mmdd=\$(date +%m%d)
+        local name="doznanie__gost-signer_\$dt"
+        local port="1\$mmdd"
+        local image="gitlab.dev.iac.mchs.ru:5050/cgu/doznanie.web/srv-gost-signer----\${branch}:\${pipeline}"
+
+        if eval "\$_DOCKER ps -a --format '{{.Names}}'" | grep -q "^\$name\$"; then
+            echo "Контейнер \$name уже существует. Удалить? [y/N]"
+            read -r yn
+            if [[ "\$yn" =~ ^[Yy] ]]; then
+                eval "\$_DOCKER rm -f \$name"
+            else
+                return 1
+            fi
+        fi
+
+        echo "[DEV GOST] Запуск: \$name | порт: \$port | образ: \$image"
+        eval "\$_DOCKER run -itd \\
+            --name \$name \\
+            --restart unless-stopped \\
+            -p \$port:8080 \\
+            -e TZ=Europe/Moscow \\
+            -e ASPNETCORE_URLS='http://0.0.0.0:8080' \\
+            -e CONTAINER_PASSWORD='1234567890' \\
+            -e KEY_CONTAINER_NAME='81ab0001.000' \\
+            -v /srv/services/inq.dev.iac.mchs.ru/gost-signer-keys:/keys:ro \\
+            -v /etc/hosts:/etc/hosts:ro \\
+            -v /srv/services/inq.dev.iac.mchs.ru/gost-signer.appsettings.json:/app/gost-signer/appsettings.json:ro \\
+            \$image"
+    }
+
+    # dozrun-gost-prod — запуск ГОСТ-подписи (prod)
+    dozrun-gost-prod() {
+        local branch=\${1:-\$(dozbranch)}
+        [ -z "\$branch" ] && return
+
+        local pipeline
+        if [ -n "\$2" ]; then
+            pipeline="\$2"
+        else
+            echo -n "pipeline> "
+            read pipeline
+        fi
+        [ -z "\$pipeline" ] && return
+
+        local dt=\$(date +%y%m%d)
+        local mmdd=\$(date +%m%d)
+        local name="doznanie__gost-signer_\$dt"
+        local port="2\$mmdd"
+        local image="gitlab.dev.iac.mchs.ru:5050/cgu/doznanie.web/srv-gost-signer----\${branch}:\${pipeline}"
+
+        if eval "\$_DOCKER ps -a --format '{{.Names}}'" | grep -q "^\$name\$"; then
+            echo "Контейнер \$name уже существует. Удалить? [y/N]"
+            read -r yn
+            if [[ "\$yn" =~ ^[Yy] ]]; then
+                eval "\$_DOCKER rm -f \$name"
+            else
+                return 1
+            fi
+        fi
+
+        echo "[PROD GOST] Запуск: \$name | порт: \$port | образ: \$image"
+        eval "\$_DOCKER run -itd \\
+            --name \$name \\
+            --restart unless-stopped \\
+            -p \$port:8080 \\
+            -e TZ=Europe/Moscow \\
+            -e ASPNETCORE_URLS='http://0.0.0.0:8080' \\
+            -e CONTAINER_PASSWORD='1234567890' \\
+            -e KEY_CONTAINER_NAME='81ab0001.000' \\
+            -e CRYPTO_LICENSE='40000-A0000-B0000-C0000-D0000' \\
+            -v /home/stepanovim/inq.cgu.mchs.ru/gost-signer-keys:/keys:ro \\
+            -v /etc/hosts:/etc/hosts:ro \\
+            -v /home/stepanovim/inq.cgu.mchs.ru/configs/gost-signer.appsettings.json:/app/gost-signer/appsettings.json:ro \\
+            \$image"
+    }
 fi
 
 # ── История: поиск стрелками (в конце, после всех плагинов) ──
