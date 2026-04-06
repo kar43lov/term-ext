@@ -713,6 +713,14 @@ if command -v docker >/dev/null 2>&1; then
         fi
         [ -z "\$pipeline" ] && return
 
+        local container_pass key_name
+        echo -n "CONTAINER_PASSWORD [1234567890]> "
+        read container_pass
+        container_pass=\${container_pass:-1234567890}
+        echo -n "KEY_CONTAINER_NAME [81ab0001.000]> "
+        read key_name
+        key_name=\${key_name:-81ab0001.000}
+
         local dt=\$(date +%y%m%d)
         local mmdd=\$(date +%m%d)
         local name="doznanie__gost-signer_\$dt"
@@ -736,8 +744,8 @@ if command -v docker >/dev/null 2>&1; then
             -p \$port:8080 \\
             -e TZ=Europe/Moscow \\
             -e ASPNETCORE_URLS='http://0.0.0.0:8080' \\
-            -e CONTAINER_PASSWORD='1234567890' \\
-            -e KEY_CONTAINER_NAME='81ab0001.000' \\
+            -e CONTAINER_PASSWORD='\$container_pass' \\
+            -e KEY_CONTAINER_NAME='\$key_name' \\
             -v /srv/services/inq.dev.iac.mchs.ru/gost-signer-keys:/keys:ro \\
             -v /etc/hosts:/etc/hosts:ro \\
             -v /srv/services/inq.dev.iac.mchs.ru/gost-signer.appsettings.json:/app/gost-signer/appsettings.json:ro \\
@@ -757,6 +765,17 @@ if command -v docker >/dev/null 2>&1; then
             read pipeline
         fi
         [ -z "\$pipeline" ] && return
+
+        local container_pass key_name crypto_lic
+        echo -n "CONTAINER_PASSWORD [1234567890]> "
+        read container_pass
+        container_pass=\${container_pass:-1234567890}
+        echo -n "KEY_CONTAINER_NAME [81ab0001.000]> "
+        read key_name
+        key_name=\${key_name:-81ab0001.000}
+        echo -n "CRYPTO_LICENSE [40000-A0000-B0000-C0000-D0000]> "
+        read crypto_lic
+        crypto_lic=\${crypto_lic:-40000-A0000-B0000-C0000-D0000}
 
         local dt=\$(date +%y%m%d)
         local mmdd=\$(date +%m%d)
@@ -781,9 +800,9 @@ if command -v docker >/dev/null 2>&1; then
             -p \$port:8080 \\
             -e TZ=Europe/Moscow \\
             -e ASPNETCORE_URLS='http://0.0.0.0:8080' \\
-            -e CONTAINER_PASSWORD='1234567890' \\
-            -e KEY_CONTAINER_NAME='81ab0001.000' \\
-            -e CRYPTO_LICENSE='40000-A0000-B0000-C0000-D0000' \\
+            -e CONTAINER_PASSWORD='\$container_pass' \\
+            -e KEY_CONTAINER_NAME='\$key_name' \\
+            -e CRYPTO_LICENSE='\$crypto_lic' \\
             -v /home/stepanovim/inq.cgu.mchs.ru/gost-signer-keys:/keys:ro \\
             -v /etc/hosts:/etc/hosts:ro \\
             -v /home/stepanovim/inq.cgu.mchs.ru/configs/gost-signer.appsettings.json:/app/gost-signer/appsettings.json:ro \\
