@@ -513,7 +513,7 @@ if command -v docker >/dev/null 2>&1; then
     dst()  { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER start $t"; }
     drm()  { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER rm -f $t"; }
     dlogs(){ local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER logs -f $t"; }
-    dps()  { eval "$_DOCKER ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'"; }
+    dps()  { eval "$_DOCKER ps -a --format 'table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}'"; }
 fi
             \$image"
     }
