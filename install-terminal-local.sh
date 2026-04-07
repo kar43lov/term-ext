@@ -95,25 +95,16 @@ if command -v ralphex >/dev/null 2>&1; then
 fi
 LOCAL_EOF
 
-# ── Подключить в ~/.zshrc.term-ext (перед bindkey) ──────────
-MARKER='.zshrc.term-ext-local'
-if ! grep -qF "$MARKER" ~/.zshrc.term-ext; then
-    # Вставить перед блоком "История: поиск стрелками"
-    if grep -q '# ── История: поиск стрелками' ~/.zshrc.term-ext; then
-        sed -i.bak '/# ── История: поиск стрелками/i\
-# ── Локальные расширения (tmux, claude, ralphex) ─────────────\
-[ -f ~/.zshrc.term-ext-local ] \&\& source ~/.zshrc.term-ext-local\
-' ~/.zshrc.term-ext
-        rm -f ~/.zshrc.term-ext.bak
-        info "Подключено в ~/.zshrc.term-ext (перед bindkey)."
-    else
-        # Fallback: добавить в конец
-        echo '' >> ~/.zshrc.term-ext
-        echo '[ -f ~/.zshrc.term-ext-local ] && source ~/.zshrc.term-ext-local' >> ~/.zshrc.term-ext
-        info "Подключено в конец ~/.zshrc.term-ext."
-    fi
+# ── Подключить в ~/.zshrc ─────────────────────────────────────
+# Добавляем в .zshrc (не в .zshrc.term-ext), чтобы повторный запуск
+# основного скрипта не затирал подключение local.
+LOCAL_SOURCE='[ -f ~/.zshrc.term-ext-local ] && source ~/.zshrc.term-ext-local'
+if ! grep -qF '.zshrc.term-ext-local' ~/.zshrc 2>/dev/null; then
+    echo "" >> ~/.zshrc
+    echo "$LOCAL_SOURCE" >> ~/.zshrc
+    info "Подключено в ~/.zshrc."
 else
-    info "~/.zshrc.term-ext уже подключает local."
+    info "~/.zshrc уже подключает local."
 fi
 
 echo ""
