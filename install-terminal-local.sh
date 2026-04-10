@@ -93,6 +93,36 @@ if command -v ralphex >/dev/null 2>&1; then
         fi
     }
 fi
+
+# help-local — шпаргалка по локальным расширениям
+help-local() {
+    echo ""
+    echo "\033[1;36m  term-ext-local — шпаргалка\033[0m"
+    echo "\033[90m  ─────────────────────────────────────────\033[0m"
+    echo ""
+    if command -v tmux >/dev/null 2>&1; then
+    echo "\033[1;33m  tmux\033[0m"
+    echo "    ts           выбор сессии через fzf (Ctrl-D — удалить)"
+    echo "    ta имя       подключиться к сессии"
+    echo "    tl / tls     список сессий"
+    echo "    tk имя       удалить сессию"
+    echo ""
+    fi
+    if command -v claude >/dev/null 2>&1; then
+    echo "\033[1;33m  Claude\033[0m"
+    echo "    cl           запуск claude"
+    echo "    tc           запуск claude в tmux-сессии"
+    echo ""
+    fi
+    if command -v ralphex >/dev/null 2>&1; then
+    echo "\033[1;33m  Ralphex\033[0m"
+    echo "    ralph        запуск ralphex напрямую"
+    echo "    ralphex      запуск ralphex в tmux-сессии"
+    echo ""
+    fi
+    echo "\033[90m  Полная документация: https://github.com/kar43lov/term-ext\033[0m"
+    echo ""
+}
 LOCAL_EOF
 
 # ── Подключить в ~/.zshrc ─────────────────────────────────────
