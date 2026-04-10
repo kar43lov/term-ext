@@ -26,14 +26,14 @@
 ### Свой сервер или Mac
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kar43lov/term-ext/main/install-terminal.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kar43lov/term-ext/main/install-terminal.sh -o /tmp/term-ext.sh && bash /tmp/term-ext.sh
 exec zsh
 ```
 
 ### Общий сервер (без sudo, только для меня)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kar43lov/term-ext/main/install-terminal-user.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kar43lov/term-ext/main/install-terminal-user.sh -o /tmp/term-ext-user.sh && bash /tmp/term-ext-user.sh
 exec zsh
 ```
 
@@ -42,9 +42,11 @@ exec zsh
 Ставится после основного скрипта:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kar43lov/term-ext/main/install-terminal-local.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kar43lov/term-ext/main/install-terminal-local.sh -o /tmp/term-ext-local.sh && bash /tmp/term-ext-local.sh
 exec zsh
 ```
+
+> На macOS `curl | bash` не работает из-за brew, который перехватывает stdin. Скачивай в файл.
 
 ### Повторный запуск
 
