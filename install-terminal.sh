@@ -560,9 +560,6 @@ if command -v docker >/dev/null 2>&1; then
     dlogs(){ local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER logs -f $t"; }
     dps()  { eval "$_DOCKER ps -a --format 'table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}'"; }
 fi
-            \$image"
-    }
-fi
 
 # ── История: поиск стрелками (в конце, после всех плагинов) ──
 autoload -U up-line-or-beginning-search
