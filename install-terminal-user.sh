@@ -442,6 +442,51 @@ fi
 # ── Утилиты ──────────────────────────────────────────────────
 mkcd() { mkdir -p "\$1" && cd "\$1" }
 
+# help-ext — шпаргалка по всем командам term-ext
+help-ext() {
+    echo ""
+    echo "\033[1;36m  term-ext — шпаргалка\033[0m"
+    echo "\033[90m  ─────────────────────────────────────────\033[0m"
+    echo ""
+    echo "\033[1;33m  Навигация (zoxide)\033[0m"
+    echo "    z foo        перейти в папку с 'foo' в пути"
+    echo "    z foo bar    папка с 'foo' и 'bar'"
+    echo "    zi           интерактивный выбор из истории"
+    echo "    z -          вернуться назад"
+    echo ""
+    echo "\033[1;33m  Поиск (fzf)\033[0m"
+    echo "    Ctrl+R       поиск по истории команд"
+    echo "    Ctrl+T       поиск файлов"
+    echo "    Alt+C        поиск и переход в папку"
+    echo "    cd <Tab>     выбор папки с превью"
+    echo ""
+    echo "\033[1;33m  Стрелки\033[0m"
+    echo "    ↑ / ↓        поиск по истории с учётом введённого"
+    echo ""
+    echo "\033[1;33m  Файлы\033[0m"
+    echo "    ls           список (eza)"
+    echo "    ll           подробный список"
+    echo "    la           все файлы + скрытые"
+    echo "    lt           дерево на 2 уровня"
+    echo "    cat файл     с подсветкой синтаксиса (bat)"
+    echo "    br           файловый менеджер (broot)"
+    echo "    mkcd имя     создать папку и перейти"
+    echo ""
+    if command -v docker >/dev/null 2>&1; then
+    echo "\033[1;33m  Docker\033[0m"
+    echo "    ld           lazydocker (TUI)"
+    echo "    dps          список контейнеров"
+    echo "    dr [имя]     restart (fzf или по имени)"
+    echo "    ds [имя]     stop"
+    echo "    dst [имя]    start"
+    echo "    drm [имя]    удалить (rm -f)"
+    echo "    dlogs [имя]  логи в реальном времени"
+    echo ""
+    fi
+    echo "\033[90m  Полная документация: https://github.com/kar43lov/term-ext\033[0m"
+    echo ""
+}
+
 # ── Docker (если установлен) ──────────────────────────────────
 if command -v docker >/dev/null 2>&1; then
     # Определяем, нужен ли sudo для docker
