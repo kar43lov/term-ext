@@ -475,7 +475,7 @@ help-ext() {
     if command -v docker >/dev/null 2>&1; then
     echo "\033[1;33m  Docker\033[0m"
     echo "    ld           lazydocker (TUI)"
-    echo "    dps          список контейнеров"
+    echo "    dps [фильтр] список контейнеров (dps mup — только с mup)"
     echo "    dr [имя]     restart (fzf или по имени)"
     echo "    ds [имя]     stop"
     echo "    dst [имя]    start"
@@ -509,7 +509,15 @@ if command -v docker >/dev/null 2>&1; then
     dst()  { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER start $t"; }
     drm()  { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER rm -f $t"; }
     dlogs(){ local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER logs -f $t"; }
-    dps()  { eval "$_DOCKER ps -a --format 'table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}'"; }
+    dps() {
+        local filter="\${1:-}"
+        local fmt='table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}'
+        if [ -n "\$filter" ]; then
+            eval "\$_DOCKER ps -a --format '\$fmt' --filter name=\$filter"
+        else
+            eval "\$_DOCKER ps -a --format '\$fmt'"
+        fi
+    }
 fi
 
 # ── История: поиск стрелками (в конце, после всех плагинов) ──
