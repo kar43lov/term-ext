@@ -499,23 +499,23 @@ if command -v docker >/dev/null 2>&1; then
     alias ld='lazydocker'
 
     dselect() {
-        "\${_DOCKER[@]}" ps -a --format '{{.Names}}' \
-        | fzf --preview "\${_DOCKER[*]} ps -a --filter name='^/{}\$' --format 'Status: {{.Status}}\\nImage: {{.Image}}\\nPorts: {{.Ports}}'" \
+        "${_DOCKER[@]}" ps -a --format '{{.Names}}' \
+        | fzf --preview "${_DOCKER[*]} ps -a --filter name='^/{}$' --format 'Status: {{.Status}}\nImage: {{.Image}}\nPorts: {{.Ports}}'" \
               --preview-window=right:60%
     }
 
-    dr()   { local t=\${1:-\$(dselect)}; [ -n "\$t" ] && "\${_DOCKER[@]}" restart "\$t"; }
-    ds()   { local t=\${1:-\$(dselect)}; [ -n "\$t" ] && "\${_DOCKER[@]}" stop "\$t"; }
-    dst()  { local t=\${1:-\$(dselect)}; [ -n "\$t" ] && "\${_DOCKER[@]}" start "\$t"; }
-    drm()  { local t=\${1:-\$(dselect)}; [ -n "\$t" ] && "\${_DOCKER[@]}" rm -f "\$t"; }
-    dlogs(){ local t=\${1:-\$(dselect)}; [ -n "\$t" ] && "\${_DOCKER[@]}" logs -f "\$t"; }
+    dr()   { local t=${1:-$(dselect)}; [ -n "$t" ] && "${_DOCKER[@]}" restart "$t"; }
+    ds()   { local t=${1:-$(dselect)}; [ -n "$t" ] && "${_DOCKER[@]}" stop "$t"; }
+    dst()  { local t=${1:-$(dselect)}; [ -n "$t" ] && "${_DOCKER[@]}" start "$t"; }
+    drm()  { local t=${1:-$(dselect)}; [ -n "$t" ] && "${_DOCKER[@]}" rm -f "$t"; }
+    dlogs(){ local t=${1:-$(dselect)}; [ -n "$t" ] && "${_DOCKER[@]}" logs -f "$t"; }
     dps() {
-        local filter="\${1:-}"
+        local filter="${1:-}"
         local fmt='table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}'
-        if [ -n "\$filter" ]; then
-            "\${_DOCKER[@]}" ps -a --format "\$fmt" --filter "name=\$filter"
+        if [ -n "$filter" ]; then
+            "${_DOCKER[@]}" ps -a --format "$fmt" --filter "name=$filter"
         else
-            "\${_DOCKER[@]}" ps -a --format "\$fmt"
+            "${_DOCKER[@]}" ps -a --format "$fmt"
         fi
     }
 fi
