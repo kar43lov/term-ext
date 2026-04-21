@@ -556,9 +556,9 @@ else
     # Проверяем текущий шелл
     CURRENT_SHELL=$(basename "$SHELL")
     if [ "$CURRENT_SHELL" != "zsh" ]; then
-        # Пробуем chsh (может не сработать без sudo)
+        # Пробуем chsh без интерактивного ввода (</dev/null — чтобы не ждал пароль)
         ZSH_PATH=$(command -v zsh)
-        if chsh -s "$ZSH_PATH" 2>/dev/null; then
+        if chsh -s "$ZSH_PATH" </dev/null >/dev/null 2>&1; then
             info "Шелл по умолчанию изменён на zsh."
         else
             # Если chsh не сработал — добавляем exec zsh в .bashrc
