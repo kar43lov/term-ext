@@ -489,33 +489,33 @@ help-ext() {
 
 # ── Docker (если установлен) ──────────────────────────────────
 if command -v docker >/dev/null 2>&1; then
-    # Определяем, нужен ли sudo для docker
+    # Определяем, нужен ли sudo для docker (массив — для корректного word splitting)
     if docker ps >/dev/null 2>&1; then
-        _DOCKER="docker"
+        _DOCKER=(docker)
     else
-        _DOCKER="sudo docker"
+        _DOCKER=(sudo docker)
     fi
 
     alias ld='lazydocker'
 
     dselect() {
-        eval "$_DOCKER ps -a --format '{{.Names}}'" \
-        | fzf --preview "eval $_DOCKER ps -a --filter name='^/{}$' --format 'Status: {{.Status}}\nImage: {{.Image}}\nPorts: {{.Ports}}'" \
+        "\${_DOCKER[@]}" ps -a --format '{{.Names}}' \
+        | fzf --preview "\${_DOCKER[*]} ps -a --filter name='^/{}\$' --format 'Status: {{.Status}}\\nImage: {{.Image}}\\nPorts: {{.Ports}}'" \
               --preview-window=right:60%
     }
 
-    dr()   { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER restart $t"; }
-    ds()   { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER stop $t"; }
-    dst()  { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER start $t"; }
-    drm()  { local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER rm -f $t"; }
-    dlogs(){ local t=${1:-$(dselect)}; [ -n "$t" ] && eval "$_DOCKER logs -f $t"; }
+    dr()   { local t=\${1:-\$(dselect)}; [ -n "\$t" ] && "\${_DOCKER[@]}" restart "\$t"; }
+    ds()   { local t=\${1:-\$(dselect)}; [ -n "\$t" ] && "\${_DOCKER[@]}" stop "\$t"; }
+    dst()  { local t=\${1:-\$(dselect)}; [ -n "\$t" ] && "\${_DOCKER[@]}" start "\$t"; }
+    drm()  { local t=\${1:-\$(dselect)}; [ -n "\$t" ] && "\${_DOCKER[@]}" rm -f "\$t"; }
+    dlogs(){ local t=\${1:-\$(dselect)}; [ -n "\$t" ] && "\${_DOCKER[@]}" logs -f "\$t"; }
     dps() {
         local filter="\${1:-}"
         local fmt='table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}'
         if [ -n "\$filter" ]; then
-            \${=_DOCKER} ps -a --format "\$fmt" --filter "name=\$filter"
+            "\${_DOCKER[@]}" ps -a --format "\$fmt" --filter "name=\$filter"
         else
-            \${=_DOCKER} ps -a --format "\$fmt"
+            "\${_DOCKER[@]}" ps -a --format "\$fmt"
         fi
     }
 fi
