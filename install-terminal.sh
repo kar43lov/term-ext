@@ -562,9 +562,9 @@ if command -v docker >/dev/null 2>&1; then
         local filter="\${1:-}"
         local fmt='table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}'
         if [ -n "\$filter" ]; then
-            eval "\$_DOCKER ps -a --format '\$fmt' --filter name=\$filter"
+            \${=_DOCKER} ps -a --format "\$fmt" --filter "name=\$filter"
         else
-            eval "\$_DOCKER ps -a --format '\$fmt'"
+            \${=_DOCKER} ps -a --format "\$fmt"
         fi
     }
 fi
