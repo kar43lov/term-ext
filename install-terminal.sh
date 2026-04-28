@@ -184,14 +184,42 @@ else
 fi
 
 # ── broot ─────────────────────────────────────────────────────
-if ! command -v broot >/dev/null 2>&1; then
+# Проверяем не только наличие, но и работоспособность — старый glibc может ломать бинарник
+if command -v broot >/dev/null 2>&1 && broot --version >/dev/null 2>&1; then
+    BROOT_OK=1
+else
+    BROOT_OK=0
+fi
+if [ "$BROOT_OK" = "0" ]; then
     info "Устанавливаю broot..."
     if [ "$PM" = "brew" ]; then
         brew install broot
     else
-        curl -o /tmp/broot -sSfL "https://dystroy.org/broot/download/x86_64-linux/broot"
-        chmod +x /tmp/broot
-        sudo mv /tmp/broot /usr/local/bin/broot
+        # musl-сборка из GitHub release — статическая, работает на любой версии glibc
+        if ! command -v unzip >/dev/null 2>&1; then
+            warn "unzip не найден — broot пропущен. Установи unzip и перезапусти скрипт."
+        else
+            case "$(uname -m)" in
+                x86_64|amd64)  BROOT_ARCH="x86_64-unknown-linux-musl/broot" ;;
+                aarch64|arm64) BROOT_ARCH="aarch64-unknown-linux-musl/broot" ;;
+                *)             BROOT_ARCH="" ;;
+            esac
+            BROOT_VER=$(curl -sf https://api.github.com/repos/Canop/broot/releases/latest \
+                | grep -oE '"tag_name":\s*"v[^"]+"' | head -1 | grep -oE 'v[0-9.]+')
+            if [ -z "$BROOT_ARCH" ] || [ -z "$BROOT_VER" ]; then
+                warn "Архитектура или версия broot не определены — пропускаю."
+            else
+                BROOT_NUM="${BROOT_VER#v}"
+                if curl -sSfL "https://github.com/Canop/broot/releases/download/${BROOT_VER}/broot_${BROOT_NUM}.zip" -o /tmp/broot.zip; then
+                    unzip -j -o /tmp/broot.zip "$BROOT_ARCH" -d /tmp/ >/dev/null
+                    chmod +x /tmp/broot
+                    sudo mv /tmp/broot /usr/local/bin/broot
+                    rm -f /tmp/broot.zip
+                else
+                    warn "Не удалось скачать broot — пропускаю."
+                fi
+            fi
+        fi
     fi
     # --install интерактивный — создаём launcher вручную
     mkdir -p ~/.local/share/broot/launcher/bash
