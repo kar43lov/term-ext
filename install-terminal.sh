@@ -544,7 +544,12 @@ if command -v docker >/dev/null 2>&1; then
         alias ld='lazydocker'
     else
         _DOCKER=(sudo docker)
-        alias ld='sudo lazydocker'
+        # sudo сбрасывает PATH — резолвим полный путь к lazydocker в шелле юзера
+        ld() {
+            local lz
+            lz="$(command -v lazydocker)" || { echo "lazydocker не найден в PATH" >&2; return 1; }
+            sudo "$lz" "$@"
+        }
     fi
 
     dselect() {
