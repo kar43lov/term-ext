@@ -541,11 +541,11 @@ if command -v docker >/dev/null 2>&1; then
     # Определяем, нужен ли sudo для docker (массив — для корректного word splitting)
     if docker ps >/dev/null 2>&1; then
         _DOCKER=(docker)
+        alias ld='lazydocker'
     else
         _DOCKER=(sudo docker)
+        alias ld='sudo lazydocker'
     fi
-
-    alias ld='lazydocker'
 
     dselect() {
         "${_DOCKER[@]}" ps -a --format '{{.Names}}' \
