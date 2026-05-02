@@ -206,6 +206,36 @@ else
     info "lazydocker уже установлен."
 fi
 
+# ── lazygit ───────────────────────────────────────────────────
+if ! command -v lazygit >/dev/null 2>&1; then
+    info "Устанавливаю lazygit..."
+    if [ "$HAS_BREW" = true ]; then
+        brew install lazygit
+    else
+        if [ "$ARCH_LABEL" = "x86_64" ]; then
+            LAZYGIT_ARCH="Linux_x86_64"
+        else
+            LAZYGIT_ARCH="Linux_arm64"
+        fi
+        LAZYGIT_VERSION=$(curl -sf https://api.github.com/repos/jesseduffield/lazygit/releases/latest \
+            | grep -oE '"tag_name":\s*"v[^"]+"' | head -1 | grep -oE '[0-9.]+' | head -1)
+        if [ -z "$LAZYGIT_VERSION" ]; then
+            warn "Не удалось определить версию lazygit — пропускаю."
+        else
+            if curl -sSfL "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_${LAZYGIT_ARCH}.tar.gz" -o /tmp/lazygit.tar.gz; then
+                tar xf /tmp/lazygit.tar.gz -C /tmp/ lazygit
+                chmod +x /tmp/lazygit
+                mv /tmp/lazygit ~/.local/bin/lazygit
+                rm -f /tmp/lazygit.tar.gz
+            else
+                warn "Не удалось скачать lazygit — пропускаю."
+            fi
+        fi
+    fi
+else
+    info "lazygit уже установлен."
+fi
+
 # ── fzf-tab ───────────────────────────────────────────────────
 FZF_TAB_DIR="$HOME/.zsh/plugins/fzf-tab"
 if [ ! -d "$FZF_TAB_DIR" ]; then
@@ -463,6 +493,10 @@ if command -v bat >/dev/null 2>&1; then
     alias cat='bat --paging=never'
 fi
 
+if command -v lazygit >/dev/null 2>&1; then
+    alias lg='lazygit'
+fi
+
 # ── Утилиты ──────────────────────────────────────────────────
 mkcd() { mkdir -p "\$1" && cd "\$1" }
 
@@ -496,6 +530,11 @@ help-ext() {
     echo "    br           файловый менеджер (broot)"
     echo "    mkcd имя     создать папку и перейти"
     echo ""
+    if command -v lazygit >/dev/null 2>&1; then
+    echo "\033[1;33m  Git\033[0m"
+    echo "    lg           lazygit (TUI)"
+    echo ""
+    fi
     if command -v docker >/dev/null 2>&1; then
     echo "\033[1;33m  Docker\033[0m"
     echo "    ld           lazydocker (TUI)"
@@ -623,6 +662,8 @@ echo "  - zoxide (умный cd)"
 echo "  - eza (красивый ls)"
 echo "  - bat (красивый cat)"
 echo "  - broot (файловый менеджер)"
+echo "  - lazydocker (TUI для Docker)"
+echo "  - lazygit (TUI для Git)"
 echo ""
 info "Перезапусти шелл:"
 echo "  exec zsh"
